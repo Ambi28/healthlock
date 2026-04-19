@@ -21,9 +21,19 @@ if (!MONGO_URI && process.env.NODE_ENV === 'production') {
   console.error('❌ ERROR: MONGO_URI is not defined in Environment Variables!');
 }
 
-mongoose.connect(MONGO_URI || 'mongodb://localhost:27017/health')
-  .then(() => console.log('✅ MongoDB Connected Successfully'))
-  .catch(err => console.log('❌ MongoDB Connection Error:', err));
+const connectDB = async () => {
+  try {
+    await mongoose.connect(MONGO_URI || 'mongodb://localhost:27017/health', {
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      bufferCommands: false,         // Disable Mongoose buffering for faster error reporting
+    });
+    console.log('✅ MongoDB Connected Successfully');
+  } catch (err) {
+    console.log('❌ MongoDB Connection Error:', err.message);
+  }
+};
+
+connectDB();
 
 // --- MODELS ---
 
