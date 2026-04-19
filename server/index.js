@@ -16,8 +16,12 @@ app.use(express.json());
 app.use(cors());
 
 // MongoDB Connection
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/health';
-mongoose.connect(MONGO_URI)
+const MONGO_URI = process.env.MONGO_URI;
+if (!MONGO_URI && process.env.NODE_ENV === 'production') {
+  console.error('❌ ERROR: MONGO_URI is not defined in Environment Variables!');
+}
+
+mongoose.connect(MONGO_URI || 'mongodb://localhost:27017/health')
   .then(() => console.log('✅ MongoDB Connected Successfully'))
   .catch(err => console.log('❌ MongoDB Connection Error:', err));
 
@@ -108,22 +112,22 @@ app.post('/api/auth/login', async (req, res) => {
       // Check for either patientId OR qrToken matching the username
       const patient = await Patient.findOne({
         $or: [
-          { patientId: username }, 
-          { qrToken: username }, 
+          { patientId: username },
+          { qrToken: username },
           { email: username }
         ],
         password: password
       });
       if (!patient) return res.status(401).json({ success: false, error: 'Invalid ID/Token or password' });
-      return res.json({ 
-        success: true, 
-        user: { 
-          username: patient.patientId, 
+      return res.json({
+        success: true,
+        user: {
+          username: patient.patientId,
           patientId: patient.patientId,
-          role: 'PATIENT', 
+          role: 'PATIENT',
           name: patient.name,
           qrToken: patient.qrToken
-        } 
+        }
       });
     } else {
       // Staff roles simplified login (for demo, but added password check)
@@ -140,7 +144,7 @@ app.post('/api/auth/login', async (req, res) => {
           }
         }
       }
-      
+
       if (user.role !== role) {
         return res.status(401).json({ success: false, error: 'Incorrect role for this user' });
       } else if (password && user.password !== password) {
@@ -210,7 +214,7 @@ app.post('/api/patients/:id/rotate-token', async (req, res) => {
     if (!patient) return res.status(404).json({ success: false, error: 'Patient not found' });
 
     const oldToken = patient.qrToken;
-    const nextVersion = (patient.tokenHistory ? patient.tokenHistory.length : 0) + 2; 
+    const nextVersion = (patient.tokenHistory ? patient.tokenHistory.length : 0) + 2;
     // +2 because history was seeded with 1, and current was 1. Or if empty, etc.
     // Let's make it robust:
     const currentVersionCount = (patient.tokenHistory || []).length + 1;
@@ -341,6 +345,15 @@ app.post('/api/logs', async (req, res) => {
   }
 });
 
+// Root API route for health check
+app.get('/api', (req, res) => {
+  res.json({ message: 'HealthLock API is running', status: 'Healthy' });
+});
+
 // Start Server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+}
+
+module.exports = app;

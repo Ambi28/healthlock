@@ -1,4 +1,6 @@
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = import.meta.env.MODE === 'production' 
+  ? '/api' 
+  : 'http://localhost:5000/api';
 
 export const healthApi = {
   login: async (username: string, role: string, password?: string) => {
