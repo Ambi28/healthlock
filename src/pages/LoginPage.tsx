@@ -52,7 +52,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           onLogin(role);
           navigate('/patient');
         } else {
-          setError(result.error || 'Incorrect Patient ID or password.');
+          setError(result.error + (result.details ? `: ${result.details}` : '') || 'Incorrect Patient ID or password.');
         }
       } else {
         // Staff roles validated via backend
@@ -71,7 +71,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               role === 'ADMIN' ? '/admin' : '/';
           navigate(destination);
         } else {
-          setError(result.error || 'Incorrect email or password for this role.');
+          setError(result.error + (result.details ? `: ${result.details}` : '') || 'Incorrect email or password for this role.');
         }
       }
     } catch (err) {
