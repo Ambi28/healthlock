@@ -148,6 +148,7 @@ export function DoctorDashboard() {
   };
 
   const handleVerifyToken = async () => {
+    if (!verifyingPatient) return;
     try {
       const response = await healthApi.verifyPatientToken(verifyingPatient.patientId, enteredToken.trim());
       if (response.success) {
@@ -398,8 +399,8 @@ export function DoctorDashboard() {
                                  <ShieldCheck size={12} /> Latest Finalized Report
                                </p>
                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <p style={{ fontWeight: 600 }}>{selectedPatient.reports[selectedPatient.reports.length - 1].name}</p>
-                                  <button className="btn btn-success" style={{ padding: '0.5rem' }} onClick={() => setViewingPdf(selectedPatient.reports[selectedPatient.reports.length - 1].url)}>
+                                  <p style={{ fontWeight: 600 }}>{selectedPatient.reports?.[selectedPatient.reports.length - 1]?.name}</p>
+                                  <button className="btn btn-success" style={{ padding: '0.5rem' }} onClick={() => setViewingPdf(selectedPatient.reports?.[selectedPatient.reports.length - 1]?.url || '')}>
                                     <Eye size={14} /> View Final
                                   </button>
                                </div>
