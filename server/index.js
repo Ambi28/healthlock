@@ -15,25 +15,38 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// MongoDB Connection
-const MONGO_URI = process.env.MONGO_URI;
-if (!MONGO_URI && process.env.NODE_ENV === 'production') {
-  console.error('❌ ERROR: MONGO_URI is not defined in Environment Variables!');
-}
-
+// MongoDB Connection State
+let cachedDb = null;
 const connectDB = async () => {
+  if (cachedDb && mongoose.connection.readyState === 1) return cachedDb;
+  
+  console.log('📡 Connecting to MongoDB...');
   try {
-    await mongoose.connect(MONGO_URI || 'mongodb://localhost:27017/health', {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-      bufferCommands: false,         // Disable Mongoose buffering for faster error reporting
+    const db = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/health', {
+      serverSelectionTimeoutMS: 5000,
+      bufferCommands: false,
     });
+    cachedDb = db;
     console.log('✅ MongoDB Connected Successfully');
+    return db;
   } catch (err) {
     console.log('❌ MongoDB Connection Error:', err.message);
+    throw err;
   }
 };
 
-connectDB();
+// Connection Gatekeeper - Ensures DB is ready before every /api request
+app.use('/api', async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(503).json({ 
+      error: 'Database connection failed. Please ensure MONGO_URI is correct and Network Access is open.',
+      details: err.message 
+    });
+  }
+});
 
 // --- MODELS ---
 
